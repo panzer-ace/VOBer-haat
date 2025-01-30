@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VOB er haat</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: black;
+        }
+        canvas {
+            border: 4px solid black;
+            background: #f5f5f5;
+        }
+        #player-list, #player-inputs {
+            margin-top: 20px;
+            color: black;
+        }
+        input, button {
+            margin: 5px;
+            padding: 10px;
+            font-size: 16px;
+        }
+        .result-container {
+            max-width: 500px;
+            margin: 20px auto;
+            padding: 10px;
+            border: 2px solid black;
+            background: rgba(255, 255, 255, 0.8);
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <h1>VOB er haat</h1>
+    <h2>Enter Player Names:</h2>
+    <div id="player-inputs">
+        <input type="text" id="player1" placeholder="Player 1">
+        <input type="text" id="player2" placeholder="Player 2">
+        <input type="text" id="player3" placeholder="Player 3">
+        <input type="text" id="player4" placeholder="Player 4">
+        <input type="text" id="player5" placeholder="Player 5">
+        <input type="text" id="player6" placeholder="Player 6">
+        <input type="text" id="player7" placeholder="Player 7">
+        <input type="text" id="player8" placeholder="Player 8">
+        <input type="text" id="player9" placeholder="Player 9">
+        <input type="text" id="player10" placeholder="Player 10">
+    </div>
+    <button onclick="startGame()">Start Game</button>
+    <canvas id="wheel" width="500" height="500"></canvas>
+    <br>
+    <button onclick="spinAllPlayers()">Spin for All Players</button>
+    <div class="result-container">
+        <h3>Results:</h3>
+        <div id="player-list"></div>
+    </div>
+    <script>
+        let names = ["Jerin", "Aanchal", "Hema", "Sakiba", "Sigma", "Ahona", "Nimki", "Sohana"];
+        let probabilities = [1, 5, 5, 8, 2, 5, 5, 3];
+        let players = [];
+        let results = [];
+        let canvas = document.getElementById("wheel");
+        let ctx = canvas.getContext("2d");
+        let currentRotation = 0;
+        let spinning = false;
+        
+        function drawWheel(rotation = 0) {
+            let total = probabilities.reduce((a, b) => a + b, 0);
+            let startAngle = rotation;
+            for (let i = 0; i < names.length; i++) {
+                let sliceAngle = (probabilities[i] / total) * 2 * Math.PI;
+                ctx.beginPath();
+                ctx.moveTo(250, 250);
+                ctx.arc(250, 250, 200, startAngle, startAngle + sliceAngle);
+                ctx.fillStyle = `hsl(${i * 40}, 60%, 50%)`;
+                ctx.fill();
+                ctx.save();
+                ctx.translate(250, 250);
+                ctx.rotate(startAngle + sliceAngle / 2);
+                ctx.textAlign = "right";
+                ctx.fillStyle = "black";
+                ctx.font = "bold 16px Arial";
+                ctx.fillText(names[i], 180, 0);
+                ctx.restore();
+                startAngle += sliceAngle;
+            }
+        }
+        
+        function spinForPlayer(player, callback) {
+            let duration = 3000; 
+            let startTime = performance.now();
+            spinning = true;
+            function animateSpin(time) {
+                if (!spinning) return;
+                let progress = (time - startTime) / duration;
+                currentRotation += (1 - progress) * 50;
+                drawWheel(currentRotation * (Math.PI / 180));
+                if (progress < 1) {
+                    requestAnimationFrame(animateSpin);
+                } else {
+                    spinning = false;
+                    let total = probabilities.reduce((a, b) => a + b, 0);
+                    let randomSpin = Math.random() * total;
+                    let cumulative = 0;
+                    for (let i = 0; i < probabilities.length; i++) {
+                        cumulative += probabilities[i];
+                        if (randomSpin < cumulative) {
+                            results.push(`${player} won ${names[i]}!`);
+                            updateResults();
+                            callback();
+                            return;
+                        }
+                    }
+                }
+            }
+            requestAnimationFrame(animateSpin);
+        }
+        
+        function spinAllPlayers() {
+            results = [];
+            function spinNext(index) {
+                if (index < players.length) {
+                    spinForPlayer(players[index], () => spinNext(index + 1));
+                }
+            }
+            spinNext(0);
+        }
+        
+        function updateResults() {
+            document.getElementById("player-list").innerHTML = results.map(r => `<p>${r}</p>`).join("");
+        }
+        
+        function startGame() {
+            players = [];
+            results = [];
+            for (let i = 1; i <= 10; i++) {
+                let playerName = document.getElementById("player" + i).value;
+                if (playerName) players.push(playerName);
+            }
+            if (players.length === 0) {
+                alert("Enter at least one player");
+                return;
+            }
+            document.getElementById("player-list").innerHTML = "<h3>Game Started! Players:</h3>" + players.map(p => `<p>${p}</p>`).join("");
+            drawWheel();
+        }
+        
+        drawWheel();
+    </script>
+</body>
+</html>

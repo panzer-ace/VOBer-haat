@@ -5,54 +5,157 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VOB er haat</title>
     <style>
+        /* General Styles */
         body {
             font-family: 'Arial', sans-serif;
             text-align: center;
-            background: pink;
-            color: white;
+            background: #1e1e1e; /* Dark mode default */
+            color: #ffffff;
+            transition: background 0.5s, color 0.5s;
+            margin: 0;
+            padding: 0;
+        }
+        body.light-mode {
+            background: #f5f5f5; /* Light mode */
+            color: #000000;
+        }
+        h1, h2, h3 {
+            margin: 10px 0;
         }
         canvas {
-            border: 4px solid black;
-            background: #f5f5f5;
-        }
-        #player-list, #player-inputs {
-            margin-top: 20px;
-            color: black;
-        }
-        input, button {
-            margin: 5px;
-            padding: 10px;
-            font-size: 16px;
+            border: 4px solid #000000;
+            background: #ffffff;
+            max-width: 100%;
+            height: auto;
         }
         .result-container {
             max-width: 500px;
             margin: 20px auto;
             padding: 10px;
-            border: 2px solid black;
+            border: 2px solid #000000;
             background: rgba(255, 255, 255, 0.8);
             text-align: left;
+            color: #000000;
+        }
+        .team-container {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .team {
+            padding: 10px;
+            border: 2px solid #000000;
+            border-radius: 10px;
+            width: 45%;
+            margin: 10px;
+        }
+        #team-apex {
+            background: rgba(255, 0, 0, 0.2); /* Light red for Team Apex */
+        }
+        #team-vortex {
+            background: rgba(0, 0, 255, 0.2); /* Light blue for Team Vortex */
+        }
+        #theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 24px;
+            color: #ffffff;
+            transition: color 0.3s;
+        }
+        body.light-mode #theme-toggle {
+            color: #000000;
+        }
+        .team-inputs {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .team-inputs h3 {
+            margin-bottom: 10px;
+        }
+        input, button {
+            margin: 5px;
+            padding: 10px;
+            font-size: 16px;
+            border: 2px solid #000000;
+            border-radius: 5px;
+            background: #ffffff;
+            color: #000000;
+            transition: all 0.3s;
+        }
+        input:focus, button:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+        button {
+            background: #007bff;
+            color: #ffffff;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        input::placeholder {
+            color: #888;
+        }
+        @media (max-width: 768px) {
+            .team {
+                width: 100%;
+            }
+            .team-inputs {
+                flex-direction: column;
+                align-items: center;
+            }
+            #theme-toggle {
+                top: 10px;
+                right: 10px;
+            }
         }
     </style>
 </head>
 <body>
+    <!-- Theme Toggle Button -->
+    <button id="theme-toggle" onclick="toggleTheme()">🌙</button>
+
     <h1>VOB er haat</h1>
-    <h2>Enter Player Names:</h2>
-    <div id="player-inputs">
-        <input type="text" id="player1" placeholder="Player 1">
-        <input type="text" id="player2" placeholder="Player 2">
-        <input type="text" id="player3" placeholder="Player 3">
-        <input type="text" id="player4" placeholder="Player 4">
-        <input type="text" id="player5" placeholder="Player 5">
-        <input type="text" id="player6" placeholder="Player 6">
-        <input type="text" id="player7" placeholder="Player 7">
-        <input type="text" id="player8" placeholder="Player 8">
-        <input type="text" id="player9" placeholder="Player 9">
-        <input type="text" id="player10" placeholder="Player 10">
+    <div class="team-inputs">
+        <div id="team-apex-inputs">
+            <h3>Team Apex Players:</h3>
+            <input type="text" id="apex-player1" placeholder="Player 1">
+            <input type="text" id="apex-player2" placeholder="Player 2">
+            <input type="text" id="apex-player3" placeholder="Player 3">
+            <input type="text" id="apex-player4" placeholder="Player 4">
+            <input type="text" id="apex-player5" placeholder="Player 5">
+        </div>
+        <div id="team-vortex-inputs">
+            <h3>Team Vortex Players:</h3>
+            <input type="text" id="vortex-player1" placeholder="Player 1">
+            <input type="text" id="vortex-player2" placeholder="Player 2">
+            <input type="text" id="vortex-player3" placeholder="Player 3">
+            <input type="text" id="vortex-player4" placeholder="Player 4">
+            <input type="text" id="vortex-player5" placeholder="Player 5">
+        </div>
     </div>
     <button onclick="startGame()">Start Game</button>
     <canvas id="wheel" width="500" height="500"></canvas>
     <br>
     <button onclick="spinAllPlayers()">Spin for All Players</button>
+    <div class="team-container">
+        <div id="team-apex" class="team">
+            <h3>Team Apex</h3>
+            <div id="apex-results"></div>
+        </div>
+        <div id="team-vortex" class="team">
+            <h3>Team Vortex</h3>
+            <div id="vortex-results"></div>
+        </div>
+    </div>
     <div class="result-container">
         <h3>Results:</h3>
         <div id="player-list"></div>
@@ -60,13 +163,26 @@
     <script>
         let names = ["Jerin", "Aanchal", "Hema", "Sakiba", "Sigma", "Pretty", "Nimki", "Sohana"];
         let probabilities = [1, 5, 5, 8, 2, 5, 5, 3];
-        let players = [];
+        let marks = { "Jerin": 32, "Sigma": 24, "Aanchal": 15, "Hema": 9, "Sohana": 7, "Nimki": 6, "Sakiba": 5, "Pretty": 2 };
+        let teamApex = [];
+        let teamVortex = [];
         let results = [];
+        let apexScore = 0;
+        let vortexScore = 0;
         let canvas = document.getElementById("wheel");
         let ctx = canvas.getContext("2d");
         let currentRotation = 0;
         let spinning = false;
-        
+
+        // Theme Toggle Function
+        function toggleTheme() {
+            const body = document.body;
+            body.classList.toggle("light-mode");
+            const themeToggle = document.getElementById("theme-toggle");
+            themeToggle.textContent = body.classList.contains("light-mode") ? "🌞" : "🌙";
+        }
+
+        // Draw the Wheel
         function drawWheel(rotation = 0) {
             let total = probabilities.reduce((a, b) => a + b, 0);
             let startAngle = rotation;
@@ -88,9 +204,10 @@
                 startAngle += sliceAngle;
             }
         }
-        
+
+        // Spin for a Player
         function spinForPlayer(player, callback) {
-            let duration = 3000; 
+            let duration = 3000;
             let startTime = performance.now();
             spinning = true;
             function animateSpin(time) {
@@ -108,7 +225,15 @@
                     for (let i = 0; i < probabilities.length; i++) {
                         cumulative += probabilities[i];
                         if (randomSpin < cumulative) {
-                            results.push(`${player} won ${names[i]}!`);
+                            let result = `${player} won ${names[i]}! (Marks: ${marks[names[i]]})`;
+                            results.push(result);
+                            if (teamApex.includes(player)) {
+                                apexScore += marks[names[i]];
+                                document.getElementById("apex-results").innerHTML += `<p>${result}</p>`;
+                            } else {
+                                vortexScore += marks[names[i]];
+                                document.getElementById("vortex-results").innerHTML += `<p>${result}</p>`;
+                            }
                             updateResults();
                             callback();
                             return;
@@ -118,36 +243,58 @@
             }
             requestAnimationFrame(animateSpin);
         }
-        
+
+        // Spin for All Players
         function spinAllPlayers() {
             results = [];
+            apexScore = 0;
+            vortexScore = 0;
+            document.getElementById("apex-results").innerHTML = "";
+            document.getElementById("vortex-results").innerHTML = "";
             function spinNext(index) {
-                if (index < players.length) {
-                    spinForPlayer(players[index], () => spinNext(index + 1));
+                if (index < teamApex.length) {
+                    spinForPlayer(teamApex[index], () => spinNext(index + 1));
+                } else if (index - teamApex.length < teamVortex.length) {
+                    spinForPlayer(teamVortex[index - teamApex.length], () => spinNext(index + 1));
+                } else {
+                    let winner = apexScore > vortexScore ? "Team Apex" : "Team Vortex";
+                    results.push(`<strong>Final Scores: Team Apex (${apexScore}) vs Team Vortex (${vortexScore}). ${winner} wins!</strong>`);
+                    updateResults();
                 }
             }
             spinNext(0);
         }
-        
+
+        // Update Results
         function updateResults() {
             document.getElementById("player-list").innerHTML = results.map(r => `<p>${r}</p>`).join("");
         }
-        
+
+        // Start Game
         function startGame() {
-            players = [];
+            teamApex = [];
+            teamVortex = [];
             results = [];
-            for (let i = 1; i <= 10; i++) {
-                let playerName = document.getElementById("player" + i).value;
-                if (playerName) players.push(playerName);
+            // Collect Team Apex players
+            for (let i = 1; i <= 5; i++) {
+                let playerName = document.getElementById(`apex-player${i}`).value;
+                if (playerName) teamApex.push(playerName);
             }
-            if (players.length === 0) {
-                alert("Enter at least one player");
+            // Collect Team Vortex players
+            for (let i = 1; i <= 5; i++) {
+                let playerName = document.getElementById(`vortex-player${i}`).value;
+                if (playerName) teamVortex.push(playerName);
+            }
+            if (teamApex.length === 0 || teamVortex.length === 0) {
+                alert("Enter at least one player for each team.");
                 return;
             }
-            document.getElementById("player-list").innerHTML = "<h3>Game Started! Players:</h3>" + players.map(p => `<p>${p}</p>`).join("");
+            document.getElementById("player-list").innerHTML = `<h3>Game Started! Teams:</h3>
+                <p><strong>Team Apex:</strong> ${teamApex.join(", ")}</p>
+                <p><strong>Team Vortex:</strong> ${teamVortex.join(", ")}</p>`;
             drawWheel();
         }
-        
+
         drawWheel();
     </script>
 </body>
